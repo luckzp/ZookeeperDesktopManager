@@ -93,71 +93,71 @@
 </template>
 
 <script>
-import SystemInformation from "./LandingPage/SystemInformation";
-import zkApi from "../common/js/zookeeper.js";
+import SystemInformation from './LandingPage/SystemInformation'
+import zkApi from '../common/js/zookeeper.js'
 export default {
-  name: "landing-page",
+  name: 'landing-page',
   components: { SystemInformation },
-  data() {
+  data () {
     return {
-      address: "",
-      port: "",
-      input: "",
+      address: '',
+      port: '',
+      input: '',
       tableData: [],
       tableHeight: 0,
       breadList: [],
-      breadIndex: 0,
-    };
+      breadIndex: 0
+    }
   },
-  mounted() {
+  mounted () {
     this.$nextTick(() => {
-      this.tableHeight = window.innerHeight - 50;
-      //后面的50：根据需求空出的高度，自行调整
-    });
+      this.tableHeight = window.innerHeight - 50
+      // 后面的50：根据需求空出的高度，自行调整
+    })
   },
   methods: {
-    connect(address, port) {
-      var host = "172.31.12.119:13188";
+    connect (address, port) {
+      var host = '172.31.12.119:13188'
       var zookeeper = zkApi.connectZKByName(host, (ret) => {
-        console.log("this.data is " + ret.zkName);
-      });
-      this.tableData = zkApi.getChildren("/");
-      const bread = { name: "ROOT", path: "/" };
-      this.breadList.push(bread);
+        console.log('this.data is ' + ret.zkName)
+      })
+      this.tableData = zkApi.getChildren('/')
+      const bread = { name: 'ROOT', path: '/' }
+      this.breadList.push(bread)
     },
-    addBread(nodeLabel, nodePath) {
-      const bread = { name: nodeLabel, path: nodePath };
-      this.breadList.push(bread);
+    addBread (nodeLabel, nodePath) {
+      const bread = { name: nodeLabel, path: nodePath }
+      this.breadList.push(bread)
     },
-    getChildren(row) {
-      this.tableData = zkApi.getChildren(row.path);
+    getChildren (row) {
+      this.tableData = zkApi.getChildren(row.path)
       if (this.breadList.length > this.breadIndex + 1) {
-        this.breadList = this.breadList.splice(0, this.breadIndex + 1);
+        this.breadList = this.breadList.splice(0, this.breadIndex + 1)
       }
-      this.addBread(row.label, row.path);
-      this.breadIndex = this.breadList.length - 1;
+      this.addBread(row.label, row.path)
+      this.breadIndex = this.breadList.length - 1
     },
-    getChildrenByBread(path, index) {
-      this.tableData = zkApi.getChildren(path);
-      this.breadIndex = index;
+    getChildrenByBread (path, index) {
+      this.tableData = zkApi.getChildren(path)
+      this.breadIndex = index
     },
-    search(input) {
-      var newNodes = [];
+    search (input) {
+      var newNodes = []
       for (var i = 0; i < this.tableData.length; i++) {
         if (this.tableData[i].label.startsWith(input)) {
-          newNodes.push(this.tableData[i]);
+          newNodes.push(this.tableData[i])
         }
       }
       if (newNodes.length > 0) {
-        this.tableData = newNodes;
+        this.tableData = newNodes
       }
-      this.input = "";
+      this.input = ''
     },
-    tableRowClassName({ row, rowIndex }) {
-      return "row";
-    },
-  },
-};
+    tableRowClassName ({ row, rowIndex }) {
+      return 'row'
+    }
+  }
+}
 </script>
 
 <style>

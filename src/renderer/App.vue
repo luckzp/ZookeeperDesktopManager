@@ -8,7 +8,7 @@
   import LandingPage from '@/components/LandingPage'
 
   export default {
-    name: 'zookeeper-electron',
+    name: 'zookeeper-cli',
     components: {
       LandingPage
     }
