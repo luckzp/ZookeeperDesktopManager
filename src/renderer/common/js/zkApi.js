@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 var zkClientMap = new Map()
 var zkClient
 var Zookeeper = require('node-zookeeper-client')
@@ -110,6 +111,7 @@ function getChildren (path) {
       console.log(error.stack)
       return
     }
+    console.log('zk node get stat=%s',  stats);
     children.forEach((element) => {
       var childPath = path == '/' ? path + element : path + '/' + element
       const child = { label: element, path: childPath }
@@ -136,10 +138,9 @@ function exists (client, path) {
   })
 }
 
-function getNodeData (zkName, path, callback) {
-  var zk = zkClientMap.get(zkName)
-  if (zk != null) {
-    zk.getData(
+function getNodeData (path, callback) {
+
+    zkClient.getData(
       path,
       function (event) {
         console.log('Got event: %s.', event)
@@ -149,57 +150,12 @@ function getNodeData (zkName, path, callback) {
           console.log(error.stack)
           return
         }
-        var map = new Map()
-        if (data != undefined) {
-          console.log('Got data: %s', data)
-          // console.log("stat", JSON.stringify(stat))
-          console.log('data hex ', data.toString('UTF-8'))
-          // console.log("stat", stat.ctime.toString('UTF-8'))
-          // console.log("stat",trans(stat.czxid))
-          map.set('data', data.toString('UTF-8'))
-        }
-        // 若为饿加载模式则，将子节点查询出来插入Tree
-        if (localStorage.getItem('loadMode') == '2') {
-          zk.getChildren(
-            path,
-            function (event) {
-              console.log('Got watcher event: %s', event)
-            },
-            function (error, children, stat) {
-              if (error) {
-                console.log('Failed to list children of %s due to: %s.', path, error)
-                // zk = Zookeeper.createClient(zkName, OPTIONS)
-                // zkClientMap.set(zkName, zk)
-                // zk.connect()
-                // zkClientMap.put(zkName,zk)
-                // zk.on('connected', function () {
-                //     console.log("connectZKByName connected zk:", zk)
-                //     getNodeData(zkName,path,callback)
-                // });
-                return
-              }
-              // console.log('Children of %s are: %j.', path, children);
-              var array = new Array()
-              children.forEach(element => {
-                var childPath = path == '/' ? path + element : path + '/' + element
-                const child = { label: element, children: [], path: childPath, zkName: zkName }
-                array.push(child)
-                // console.log('parent path is %s', path)
-                // console.log('child path is %s', childPath)
-              })
-              if (array.length > 0) {
-                map.set('childrenArray', array)
-              }
-              callback(map)
-            }
-          )
-        } else {
-          callback(map)
-        }
+        var node = extracted(stat, data)
+        callback(node);
       }
     )
   }
-}
+
 
 function operateZKNode (operation, zkName, nodePath, newData, callback) {
   var zk = zkClientMap.get(zkName)
@@ -277,6 +233,88 @@ function createNode (zk, nodePath, nodeValue, callback) {
       callback('1')
     }
   )
+}
+
+const hexString = (longBuffer) => (longBuffer).toString("hex");
+
+const int64 = (longBuffer) => parseInt(hexString(longBuffer), 16);
+
+const format = (inp) =>
+  dayjs(inp).format("YYYY-MM-DD HH:mm:ss");
+  
+function extracted (stat, data)  {
+  return [
+    {
+      name: "cZxid",
+      description: "当前会话事务创建产生ID",
+      value: int64(stat.czxid),
+      realValue: `0x${hexString(stat.czxid).replace(/0+/, "")}`,
+    },
+    {
+      name: "ctime",
+      description: "创建时间",
+      value: format(int64(stat.ctime)),
+      realValue: format(int64(stat.mtime)),
+    },
+    {
+      name: "mZxid",
+      description: "最近更新节点的事务ID",
+      value: int64(stat.mzxid),
+      realValue: `0x${hexString(stat.mzxid).replace(/0+/, "")}`,
+    },
+    {
+      name: "mtime",
+      description: "最近修改时间",
+      value: format(int64(stat.mtime)),
+      realValue: format(int64(stat.mtime)),
+    },
+    {
+      name: "pZxid",
+      description: "子节点最后修改的事务ID",
+      value: int64(stat.pzxid),
+      realValue: `0x${hexString(stat.pzxid).replace(/0+/, "")}`,
+    },
+    {
+      name: "cversion",
+      description: "子节点的版本号",
+      value: stat.cversion,
+      realValue: stat.cversion,
+    },
+    {
+      name: "dataVersion",
+      description: "数据的版本号",
+      value: stat.version,
+      realValue: stat.version,
+    },
+    {
+      name: "aclVersion",
+      description: "acl的版本号",
+      value: stat.aversion,
+      realValue: stat.aversion,
+    },
+    {
+      name: "ephemeralOwner",
+      description: "创建此临时节点的会话ID",
+      value: int64(stat.ephemeralOwner),
+      realValue: `0x${
+        int64(stat.ephemeralOwner) != 0
+          ? hexString(stat.ephemeralOwner).replace(/0+/, "")
+          : 0
+      }`,
+    },
+    // {
+    //   name: "dataLength",
+    //   description: "数据长度",
+    //   value: stat.dataLength,
+    //   realValue: stat.dataLength,
+    // },
+    {
+      name: "numChildren",
+      description: "子节点的个数",
+      value: stat.numChildren,
+      realValue: stat.numChildren,
+    },
+  ];
 }
 
 export default {

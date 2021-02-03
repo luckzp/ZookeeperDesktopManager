@@ -13,25 +13,35 @@ const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
 
-function createWindow () {
+function createWindow() {
   /**
    * Initial window options
    */
   mainWindow = new BrowserWindow({
-    height: 563,
+    minHeight: 600,
     useContentSize: true,
-    width: 1000
+    minWidth: 1000
   })
 
   mainWindow.loadURL(winURL)
-
+  mainWindow.setTitle("ZookeeperDesktopManager")
   mainWindow.on('closed', () => {
     mainWindow = null
   })
 }
 
 app.on('ready', createWindow)
-
+app.on('ready', () => {
+  // ...
+  if (process.env.NODE_ENV !== 'production') {
+    require('vue-devtools').install()
+  }
+  const electron = require('electron')
+  /*获取electron窗体的菜单栏*/
+  const Menu = electron.Menu
+  /*隐藏electron创听的菜单栏*/
+  Menu.setApplicationMenu(null)
+})
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()

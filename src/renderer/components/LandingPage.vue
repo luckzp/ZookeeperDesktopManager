@@ -1,163 +1,184 @@
 <template>
   <div class="wrapper">
+    <div class="nav">
+      <el-button-group class="group">
+        <el-button
+          icon="el-icon-back"
+          size="medium"
+          style="border: none"
+        ></el-button>
+        <el-button
+          icon="el-icon-right"
+          size="medium"
+          style="border: none"
+        ></el-button>
+        <el-button
+          icon="el-icon-refresh"
+          size="medium"
+          style="border: none"
+        ></el-button>
+      </el-button-group>
 
-      <div class="left-side">
-        <div class="top">
-          <input
-            v-model="address"
-            placeholder="address"
-            class="input-address"
-          /><input v-model="port" placeholder="port" class="input-port" />
-          <div class="submit-btn">
-            <el-button
-              type="primary"
-              class="subit-btn"
-              @click="connect(address, port)"
-              >连接</el-button
-            >
-            <el-button
-              type="primary"
-              class="subit-btn"
-              @click="cancel(address, port)"
-              >断开</el-button
-            >
-          </div>
-        </div>
-        <div class="breadcrumb">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item
-              v-for="(item, index) in breadList"
-              :key="index"
-              :to="{ path: '/' }"
-              @click.native="getChildrenByBread(item.path, index)"
-              >{{ item.name }}</el-breadcrumb-item
-            >
-          </el-breadcrumb>
-        </div>
-
-        <div>
-          <el-table
-            :data="tableData"
-            style="width: 100%"
-            :row-class-name="tableRowClassName"
-            @row-click="getChildren"
+      <div class="breadcrumb">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item
+            v-for="(item, index) in breadList"
+            :key="index"
+            :to="{ path: '/' }"
+            @click.native="getChildrenByBread(item.path, index)"
+            >{{ item.name }}</el-breadcrumb-item
           >
-            <el-table-column prop="label" label="节点名称"> </el-table-column>
-            <el-table-column align="right">
-              <template slot="header" slot-scope="scope">
-                <el-input
-                  placeholder="请输入内容"
-                  v-model="input"
-                  class="input-with-select"
-                >
-                  <el-button
-                    slot="append"
-                    icon="el-icon-search"
-                    @click="search(input)"
-                  ></el-button>
-                </el-input>
-              </template>
-            </el-table-column>
-          </el-table>
+        </el-breadcrumb>
+      </div>
+    </div>
+    <div class="left-side">
+      <div class="top">
+        <input
+          v-model="address"
+          placeholder="address"
+          class="input-address"
+        /><input v-model="port" placeholder="port" class="input-port" />
+        <div class="submit-btn">
+          <el-button type="primary" @click="connect(address, port)"
+            >连接</el-button
+          >
+          <el-button type="primary" @click="cancel(address, port)"
+            >断开</el-button
+          >
         </div>
       </div>
 
-      <div class="right-side">
-        <div class="info">
-          <div class="title">Getting Started</div>
-          <p>
-            electron-vue comes packed with detailed documentation that covers
-            everything from internal configurations, using the project
-            structure, building your application, and so much more.
-          </p>
-          <button
-            @click="
-              open('https://simulatedgreg.gitbooks.io/electron-vue/content/')
-            "
-          >
-            Read the Docs</button
-          ><br /><br />
-        </div>
-        -->
-        <div class="doc">
-          <div class="title alt">Other Documentation</div>
-          <button class="alt" @click="open('https://electron.atom.io/docs/')">
-            Electron
-          </button>
-          <button class="alt" @click="open('https://vuejs.org/v2/guide/')">
-            Vue.js
-          </button>
-        </div>
+      <el-input
+        placeholder="请输入内容"
+        v-model="input"
+        class="input-with-select"
+      >
+        <el-button
+          slot="append"
+          icon="el-icon-search"
+          @click="search(input)"
+        ></el-button>
+      </el-input>
+      <div class="table-container">
+        <el-table
+          :data="tableData"
+          style="width: 100%"
+          :row-class-name="tableRowClassName"
+          :show-header="false"
+          @row-click="getChildren"
+        >
+          <el-table-column prop="label" label="节点名称"> </el-table-column>
+        </el-table>
       </div>
+    </div>
+
+    <div class="right-side">
+      <div class="info">
+        <div class="title">节点信息</div>
+        <el-table
+          :show-header="false"
+          :data="node"
+          :row-style="{ height: '0' }"
+          :cell-style="{ padding: '0' }"
+          style="width: 100%"
+        >
+          <el-table-column prop="name" label="姓名" width="150">
+          </el-table-column>
+          <el-table-column prop="realValue" label="日期" width="150">
+          </el-table-column>
+          <el-table-column prop="description" label="地址"> </el-table-column>
+        </el-table>
+      </div>
+      <div class="doc">
+        <div class="title">node value：</div>
+        <textarea
+          v-model="nodeValue"
+          style="width: 100%; height: 70%"
+        ></textarea>
+        <el-button type="primary" @click="setData()">保存</el-button>
+        <el-button type="danger" @click="deleteNode()">删除</el-button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import SystemInformation from './LandingPage/SystemInformation'
-import zkApi from '../common/js/zookeeper.js'
+import SystemInformation from "./LandingPage/SystemInformation";
+import zkApi from "../common/js/zkApi.js";
 export default {
-  name: 'landing-page',
+  name: "landing-page",
   components: { SystemInformation },
-  data () {
+  data() {
     return {
-      address: '',
-      port: '',
-      input: '',
+      address: "",
+      port: "",
+      input: "",
       tableData: [],
       tableHeight: 0,
       breadList: [],
-      breadIndex: 0
-    }
+      breadIndex: 0,
+      node: [],
+      nodeValue: "",
+    };
   },
-  mounted () {
+  mounted() {
     this.$nextTick(() => {
-      this.tableHeight = window.innerHeight - 50
+      this.tableHeight = window.innerHeight - 50;
       // 后面的50：根据需求空出的高度，自行调整
-    })
+    });
   },
   methods: {
-    connect (address, port) {
-      var host = '172.31.12.119:13188'
+    connect(address, port) {
+      var host = "172.31.12.119:13188";
       var zookeeper = zkApi.connectZKByName(host, (ret) => {
-        console.log('this.data is ' + ret.zkName)
-      })
-      this.tableData = zkApi.getChildren('/')
-      const bread = { name: 'ROOT', path: '/' }
-      this.breadList.push(bread)
+        console.log("this.data is " + ret.zkName);
+      });
+      this.tableData = zkApi.getChildren("/");
+      const bread = { name: "ROOT", path: "/" };
+      this.breadList.push(bread);
+      var that = this;
+
+      this.node = zkApi.getNodeData("/", (ret) => {
+        that.node = ret;
+      });
     },
-    addBread (nodeLabel, nodePath) {
-      const bread = { name: nodeLabel, path: nodePath }
-      this.breadList.push(bread)
+    addBread(nodeLabel, nodePath) {
+      const bread = { name: nodeLabel, path: nodePath };
+      this.breadList.push(bread);
     },
-    getChildren (row) {
-      this.tableData = zkApi.getChildren(row.path)
+    getChildren(row) {
+      this.tableData = zkApi.getChildren(row.path);
       if (this.breadList.length > this.breadIndex + 1) {
-        this.breadList = this.breadList.splice(0, this.breadIndex + 1)
+        this.breadList = this.breadList.splice(0, this.breadIndex + 1);
       }
-      this.addBread(row.label, row.path)
-      this.breadIndex = this.breadList.length - 1
+      this.addBread(row.label, row.path);
+      this.breadIndex = this.breadList.length - 1;
+      var that = this;
+      zkApi.getNodeData(row.path, (ret) => {
+        that.node = ret;
+      });
     },
-    getChildrenByBread (path, index) {
-      this.tableData = zkApi.getChildren(path)
-      this.breadIndex = index
+    getChildrenByBread(path, index) {
+      this.tableData = zkApi.getChildren(path);
+      this.breadIndex = index;
     },
-    search (input) {
-      var newNodes = []
+    search(input) {
+      var newNodes = [];
       for (var i = 0; i < this.tableData.length; i++) {
         if (this.tableData[i].label.startsWith(input)) {
-          newNodes.push(this.tableData[i])
+          newNodes.push(this.tableData[i]);
         }
       }
       if (newNodes.length > 0) {
-        this.tableData = newNodes
+        this.tableData = newNodes;
       }
-      this.input = ''
+      this.input = "";
     },
-    tableRowClassName ({ row, rowIndex }) {
-      return 'row'
-    }
-  }
-}
+    tableRowClassName({ row, rowIndex }) {
+      return "row";
+    },
+  },
+};
 </script>
 
 <style>
@@ -172,36 +193,48 @@ export default {
 body {
   font-family: "Source Sans Pro", sans-serif;
 }
-.wrapper{
+.wrapper {
   height: 100%;
   width: 100%;
-  position: absolute
+  position: absolute;
 }
 .left-side {
-  margin-top: 20px;
-  margin-bottom: 20px;
   width: 50%;
-  height: 100%;
+  height: 90%;
   float: left;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+.top{
+  margin-bottom: 5px;
+}
+.table-container {
+  overflow: auto;
+  height: 82%;
 }
 .right-side {
   width: 50%;
-  height: 100%;
+  height: 90%;
   float: left;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+.group {
+  float: left;
+  margin-left: 5px;
 }
 .breadcrumb {
+  height: 50px;
+  padding: 8px;
   word-wrap: break-word;
   word-break: break-all;
   overflow: hidden; /*这个参数根据需要来绝对要不要*/
 }
 .breadcrumb .el-breadcrumb {
-  height: 50px;
-  line-height: 50px;
   font-size: 16px;
-  border-bottom: 2px solid #409eff;
 }
 .el-table .row {
-  font-size: 18px;
+  font-size: 16px;
 }
 .input-address {
   background-color: #fff;
@@ -216,7 +249,7 @@ body {
   line-height: 40px;
   outline: none;
   padding: 0 15px;
-  width: 50%;
+  width: 45%;
 }
 .input-port {
   background-color: #fff;
@@ -235,18 +268,22 @@ body {
 }
 .submit-btn {
   float: right;
-  margin-right: 10px;
-}
-.subit-btn {
-  margin-right: 15px;
 }
 
 .info {
-  height: 80%;
-  border: 1px solid  #606266;
+  height: 50%;
+  border-radius: 4px;
+  border: 2px solid #606266;
+  overflow: auto;
 }
-
-.doc{
-  height: 20%;
+.title {
+  color: #888;
+  font-size: 18px;
+  font-weight: initial;
+  letter-spacing: 0.25px;
+  margin-top: 10px;
+}
+.doc {
+  height: 48%;
 }
 </style>
