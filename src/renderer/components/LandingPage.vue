@@ -6,16 +6,21 @@
           icon="el-icon-back"
           size="medium"
           style="border: none"
+          :disabled="breadIndex == 0 ? true : false"
+          @click="back($event)"
         ></el-button>
         <el-button
           icon="el-icon-right"
           size="medium"
           style="border: none"
+          :disabled="breadIndex >= breadList.length - 1 ? true : false"
+          @click="go($event)"
         ></el-button>
         <el-button
           icon="el-icon-refresh"
           size="medium"
           style="border: none"
+          @click="refresh()"
         ></el-button>
       </el-button-group>
 
@@ -66,9 +71,18 @@
           :row-class-name="tableRowClassName"
           :show-header="false"
           @row-click="getChildren"
+          @row-contextmenu="rowContextmenu"
+           v-contextmenu:contextmenu
         >
           <el-table-column prop="label" label="节点名称"> </el-table-column>
         </el-table>
+     
+  <v-contextmenu ref="contextmenu">
+    <v-contextmenu-item ><span class="el-icon-back" style="margin-right:5px;"></span>新增节点</v-contextmenu-item>
+    <v-contextmenu-item><span class="el-icon-back" style="margin-right:5px;"></span>删除</v-contextmenu-item>
+  </v-contextmenu>
+
+
       </div>
     </div>
 
@@ -96,7 +110,6 @@
           style="width: 100%; height: 70%"
         ></textarea>
         <el-button type="primary" @click="setData()">保存</el-button>
-        <el-button type="danger" @click="deleteNode()">删除</el-button>
       </div>
     </div>
   </div>
@@ -105,6 +118,7 @@
 <script>
 import SystemInformation from "./LandingPage/SystemInformation";
 import zkApi from "../common/js/zkApi.js";
+import contextButton from "./contextButton/index";
 export default {
   name: "landing-page",
   components: { SystemInformation },
@@ -119,6 +133,7 @@ export default {
       breadIndex: 0,
       node: [],
       nodeValue: "",
+      menuVisible: false,
     };
   },
   mounted() {
@@ -158,6 +173,36 @@ export default {
         that.node = ret;
       });
     },
+    back(e) {
+      var target = e.target;
+      if (target.nodeName == "SPAN" || target.nodeName == "I") {
+        target = e.target.parentNode;
+      }
+      target.blur();
+      if (this.breadIndex == 0) {
+        return;
+      }
+      this.breadIndex = this.breadIndex - 1;
+      this.tableData = zkApi.getChildren(
+        this.breadList[this.breadIndex].path,
+        this.breadIndex
+      );
+    },
+    go(e) {
+      var target = e.target;
+      if (target.nodeName == "SPAN" || target.nodeName == "I") {
+        target = e.target.parentNode;
+      }
+      target.blur();
+      if (this.breadIndex >= this.breadList.length - 1) {
+        return;
+      }
+      this.breadIndex = this.breadIndex + 1;
+      this.tableData = zkApi.getChildren(
+        this.breadList[this.breadIndex].path,
+        this.breadIndex
+      );
+    },
     getChildrenByBread(path, index) {
       this.tableData = zkApi.getChildren(path);
       this.breadIndex = index;
@@ -177,6 +222,30 @@ export default {
     tableRowClassName({ row, rowIndex }) {
       return "row";
     },
+    rowContextmenu(row, column, event) {
+      this.menuVisible = false;
+      this.menuVisible = true;
+      // 阻止右键默认行为
+      event.preventDefault();
+      this.$nextTick(() => {
+        this.$refs.contextbutton.init(row, column, event);
+      });
+    },
+    foo() {
+      // 取消鼠标监听事件 菜单栏
+      this.menuVisible = false;
+      document.removeEventListener("click", this.foo);
+    },
+    handleOne() {
+      console.log("点击菜单一");
+    },
+
+    handleTwo() {
+      console.log("点击菜单二");
+    },
+    handleThree() {
+      console.log("点击菜单三");
+    },
   },
 };
 </script>
@@ -193,6 +262,12 @@ export default {
 body {
   font-family: "Source Sans Pro", sans-serif;
 }
+.v-contextmenu .v-contextmenu-item{
+  color: #888 !important;
+  font-size: 15px;
+  font-weight: initial;
+  letter-spacing: 0.25px;
+}
 .wrapper {
   height: 100%;
   width: 100%;
@@ -205,7 +280,7 @@ body {
   padding-left: 5px;
   padding-right: 5px;
 }
-.top{
+.top {
   margin-bottom: 5px;
 }
 .table-container {
