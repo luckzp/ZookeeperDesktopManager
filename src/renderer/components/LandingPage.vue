@@ -1,5 +1,5 @@
 <template>
-  <div class="wrapper">
+  <div class="container">
     <div class="nav">
       <el-button-group class="group">
         <el-button
@@ -20,7 +20,7 @@
           icon="el-icon-refresh"
           size="medium"
           style="border: none"
-          @click="refresh()"
+          @click="refresh($event)"
         ></el-button>
       </el-button-group>
 
@@ -36,81 +36,130 @@
         </el-breadcrumb>
       </div>
     </div>
-    <div class="left-side">
-      <div class="top">
-        <input
-          v-model="address"
-          placeholder="address"
-          class="input-address"
-        /><input v-model="port" placeholder="port" class="input-port" />
-        <div class="submit-btn">
-          <el-button type="primary" @click="connect(address, port)"
-            >连接</el-button
+
+    <div class="wrapper">
+      <div class="left-side">
+        <div class="top">
+          <input
+            v-model="address"
+            placeholder="address"
+            class="input-address"
+          /><input v-model="port" placeholder="port" class="input-port" />
+          <div class="submit-btn">
+            <el-button
+              type="primary"
+              @click="connect(address, port)"
+              icon="el-icon-connection"
+              >连接</el-button
+            >
+          </div>
+        </div>
+
+        <el-input
+          placeholder="请输入内容"
+          v-model="input"
+          class="input-with-select"
+          @keyup.enter.native="search(input)"
+        >
+          <el-button
+            slot="append"
+            icon="el-icon-search"
+            @click="search(input)"
+          ></el-button>
+        </el-input>
+        <div class="table-container">
+          <el-table
+            :data="tableData"
+            style="width: 100%"
+            :row-class-name="tableRowClassName"
+            :show-header="false"
+            @row-click="getChildren"
+            @row-contextmenu="rowContextmenu"
+            v-contextmenu:contextmenu
           >
-          <el-button type="primary" @click="cancel(address, port)"
-            >断开</el-button
-          >
+            <el-table-column prop="label" label="节点名称"> </el-table-column>
+          </el-table>
+
+          <v-contextmenu ref="contextmenu">
+            <v-contextmenu-item @click="createNode()"
+              ><span
+                class="el-icon-circle-plus-outline"
+                style="margin-right: 8px"
+              ></span
+              >新增节点</v-contextmenu-item
+            >
+            <v-contextmenu-item @click="deleteNode()"
+              ><span class="el-icon-delete" style="margin-right: 8px"></span
+              >删除</v-contextmenu-item
+            >
+          </v-contextmenu>
         </div>
       </div>
 
-      <el-input
-        placeholder="请输入内容"
-        v-model="input"
-        class="input-with-select"
-      >
-        <el-button
-          slot="append"
-          icon="el-icon-search"
-          @click="search(input)"
-        ></el-button>
-      </el-input>
-      <div class="table-container">
-        <el-table
-          :data="tableData"
-          style="width: 100%"
-          :row-class-name="tableRowClassName"
-          :show-header="false"
-          @row-click="getChildren"
-          @row-contextmenu="rowContextmenu"
-           v-contextmenu:contextmenu
+      <div class="right-side">
+        <div class="info">
+          <div class="title">当前节点名：{{currZK}}</div>
+          <el-table
+            :show-header="false"
+            :data="node"
+            :row-style="{ height: '0' }"
+            :cell-style="{ padding: '0' }"
+            style="width: 98%"
+          >
+            <el-table-column prop="name" label="" width="150">
+            </el-table-column>
+            <el-table-column prop="realValue" label="" width="160">
+            </el-table-column>
+            <el-table-column prop="description" label="" > </el-table-column>
+          </el-table>
+        </div>
+        <div class="doc">
+          <div class="title">node value：</div>
+          <textarea
+            v-model="nodeData"
+            style="width: 100%; height: 80%"
+          ></textarea>
+          <el-button type="primary" @click="setData()">保存</el-button>
+        </div>
+      </div>
+
+      <el-dialog title="创建新节点" :visible.sync="dialogVisible" width="50%">
+        <el-form
+          :model="dynamicValidateForm2"
+          ref="dynamicValidateForm2"
+          label-width="auto"
+          class="demo-dynamic"
+          size="mini"
         >
-          <el-table-column prop="label" label="节点名称"> </el-table-column>
-        </el-table>
-     
-  <v-contextmenu ref="contextmenu">
-    <v-contextmenu-item ><span class="el-icon-back" style="margin-right:5px;"></span>新增节点</v-contextmenu-item>
-    <v-contextmenu-item><span class="el-icon-back" style="margin-right:5px;"></span>删除</v-contextmenu-item>
-  </v-contextmenu>
-
-
-      </div>
-    </div>
-
-    <div class="right-side">
-      <div class="info">
-        <div class="title">节点信息</div>
-        <el-table
-          :show-header="false"
-          :data="node"
-          :row-style="{ height: '0' }"
-          :cell-style="{ padding: '0' }"
-          style="width: 100%"
-        >
-          <el-table-column prop="name" label="姓名" width="150">
-          </el-table-column>
-          <el-table-column prop="realValue" label="日期" width="150">
-          </el-table-column>
-          <el-table-column prop="description" label="地址"> </el-table-column>
-        </el-table>
-      </div>
-      <div class="doc">
-        <div class="title">node value：</div>
-        <textarea
-          v-model="nodeValue"
-          style="width: 100%; height: 70%"
-        ></textarea>
-        <el-button type="primary" @click="setData()">保存</el-button>
-      </div>
+          <p>当前zk：{{ currZK }}</p>
+          <p>当前path：{{ currPath }}</p>
+          <el-form-item
+            prop="nodePath"
+            label="nodeName"
+            :rules="[
+              { required: true, message: '请输入节点名', trigger: 'blur' },
+            ]"
+          >
+            <el-input v-model="dynamicValidateForm2.nodePath"></el-input>
+          </el-form-item>
+          <el-form-item
+            prop="nodeValue"
+            label="nodeValue"
+            :rules="[
+              { required: false, message: '请输入节点值', trigger: 'blur' },
+            ]"
+          >
+            <el-input v-model="dynamicValidateForm2.nodeValue"></el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button
+              type="danger"
+              @click="submitForm2('dynamicValidateForm2')"
+              >提交</el-button
+            >
+          </el-form-item>
+        </el-form>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -132,8 +181,15 @@ export default {
       breadList: [],
       breadIndex: 0,
       node: [],
-      nodeValue: "",
+      nodeData: "",
       menuVisible: false,
+      dialogVisible: false,
+      currZK: "",
+      currPath: "",
+      dynamicValidateForm2: {
+        nodePath: "newChild",
+        nodeValue: "new child value",
+      },
     };
   },
   mounted() {
@@ -144,17 +200,20 @@ export default {
   },
   methods: {
     connect(address, port) {
-      var host = "172.31.12.119:13188";
+      var host = "127.0.0.1:2181";
       var zookeeper = zkApi.connectZKByName(host, (ret) => {
         console.log("this.data is " + ret.zkName);
       });
       this.tableData = zkApi.getChildren("/");
       const bread = { name: "ROOT", path: "/" };
       this.breadList.push(bread);
+      this.currPath = "/";
+      this.currZK = "ROOT";
       var that = this;
 
-      this.node = zkApi.getNodeData("/", (ret) => {
+      zkApi.getNodeData("/", (ret, val) => {
         that.node = ret;
+        that.nodeData = val;
       });
     },
     addBread(nodeLabel, nodePath) {
@@ -168,9 +227,11 @@ export default {
       }
       this.addBread(row.label, row.path);
       this.breadIndex = this.breadList.length - 1;
+      this.currPath = row.path;
       var that = this;
-      zkApi.getNodeData(row.path, (ret) => {
+      zkApi.getNodeData(row.path, (ret, val) => {
         that.node = ret;
+        that.nodeData = val;
       });
     },
     back(e) {
@@ -203,6 +264,17 @@ export default {
         this.breadIndex
       );
     },
+    refresh(e) {
+      var target = e.target;
+      if (target.nodeName == "SPAN" || target.nodeName == "I") {
+        target = e.target.parentNode;
+      }
+      target.blur();
+      this.tableData = zkApi.getChildren(
+        this.breadList[this.breadIndex].path,
+        this.breadIndex
+      );
+    },
     getChildrenByBread(path, index) {
       this.tableData = zkApi.getChildren(path);
       this.breadIndex = index;
@@ -210,41 +282,60 @@ export default {
     search(input) {
       var newNodes = [];
       for (var i = 0; i < this.tableData.length; i++) {
-        if (this.tableData[i].label.startsWith(input)) {
+        if (this.tableData[i].label.indexOf(input) != -1) {
           newNodes.push(this.tableData[i]);
         }
       }
-      if (newNodes.length > 0) {
-        this.tableData = newNodes;
-      }
+      this.tableData = newNodes;
       this.input = "";
     },
     tableRowClassName({ row, rowIndex }) {
       return "row";
     },
     rowContextmenu(row, column, event) {
-      this.menuVisible = false;
-      this.menuVisible = true;
-      // 阻止右键默认行为
-      event.preventDefault();
-      this.$nextTick(() => {
-        this.$refs.contextbutton.init(row, column, event);
+      this.currZK = row.label;
+      this.currPath = row.path;
+    },
+    deleteNode() {
+      zkApi.operateZKNode("deleteNode", this.currPath, null, (ret) => {
+        if (ret == 1) {
+          console.log("delete node success");
+          this.$message({
+            message: "删除节点成功",
+            type: "success",
+          });
+        }
       });
     },
-    foo() {
-      // 取消鼠标监听事件 菜单栏
-      this.menuVisible = false;
-      document.removeEventListener("click", this.foo);
+    setData() {
+      zkApi.operateZKNode("setData", this.currPath, this.nodeData, (ret) => {
+        if (ret == 1) {
+          this.$message({
+            message: "设置节点数据成功",
+            type: "success",
+          });
+        }
+      });
     },
-    handleOne() {
-      console.log("点击菜单一");
+    createNode() {
+      this.dialogVisible = true;
     },
-
-    handleTwo() {
-      console.log("点击菜单二");
-    },
-    handleThree() {
-      console.log("点击菜单三");
+    submitForm2(formName) {
+      zkApi.operateZKNode(
+        "createNode",
+        this.currPath + "/" + this.dynamicValidateForm2.nodePath,
+        this.dynamicValidateForm2.nodeValue,
+        (ret) => {
+          this.dialogVisible = false;
+          if (ret == 1) {
+            console.log("create data success");
+            this.$message({
+              message: "创建节点成功",
+              type: "success",
+            });
+          }
+        }
+      );
     },
   },
 };
@@ -260,46 +351,61 @@ export default {
 }
 
 body {
-  font-family: "Source Sans Pro", sans-serif;
+  font: 15px/1.5 tahoma, arial, Microsoft YaHei, sans-serif;
+  background: #f6f6f6;
 }
-.v-contextmenu .v-contextmenu-item{
+.v-contextmenu .v-contextmenu-item {
   color: #888 !important;
   font-size: 15px;
   font-weight: initial;
   letter-spacing: 0.25px;
 }
+
+.nav {
+  margin: 10px;
+  background: white;
+  border-radius: 5px;
+}
 .wrapper {
-  height: 100%;
+  height: 90%;
   width: 100%;
   position: absolute;
+  display: flex;
+  justify-content: space-between;
 }
 .left-side {
-  width: 50%;
-  height: 90%;
-  float: left;
-  padding-left: 5px;
-  padding-right: 5px;
+  width: 45%;
+  height: 100%;
+  background: white;
+  margin-right: 5px;
+  margin-left: 10px;
+  border-radius: 5px;
+  padding: 10px;
 }
 .top {
   margin-bottom: 5px;
+  background: white;
 }
 .table-container {
   overflow: auto;
   height: 82%;
 }
 .right-side {
-  width: 50%;
-  height: 90%;
-  float: left;
-  padding-left: 5px;
-  padding-right: 5px;
+  width: 55%;
+  height: 100%;
+  background: white;
+  margin-right: 10px;
+  margin-left: 5px;
+  border-radius: 5px;
+  padding: 10px;
 }
 .group {
   float: left;
   margin-left: 5px;
 }
 .breadcrumb {
-  height: 50px;
+  font-family: "Source Sans Pro", sans-serif;
+  height: 36px;
   padding: 8px;
   word-wrap: break-word;
   word-break: break-all;
@@ -346,19 +452,18 @@ body {
 }
 
 .info {
-  height: 50%;
-  border-radius: 4px;
-  border: 2px solid #606266;
   overflow: auto;
+   height: 53%;
 }
 .title {
   color: #888;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: initial;
   letter-spacing: 0.25px;
-  margin-top: 10px;
+  margin-left: 5px;
+  margin-bottom: 5px;
 }
 .doc {
-  height: 48%;
+  height: 43%;
 }
 </style>

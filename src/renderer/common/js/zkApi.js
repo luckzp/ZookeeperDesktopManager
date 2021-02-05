@@ -151,40 +151,23 @@ function getNodeData (path, callback) {
           return
         }
         var node = extracted(stat, data)
-        callback(node);
+        callback(node, data);
       }
     )
   }
 
 
-function operateZKNode (operation, zkName, nodePath, newData, callback) {
-  var zk = zkClientMap.get(zkName)
-  if (zk == undefined) {
-    zk = Zookeeper.createClient(zkName, OPTIONS)
-    zkClientMap.set(zkName, zk)
-    zk.connect()
-  } else {
+function operateZKNode (operation, nodePath, newData, callback) {
+  
     if (operation == 'setData') {
-      setNodeData(zk, nodePath, newData, callback)
+      setNodeData(zkClient, nodePath, newData, callback)
     }
     if (operation == 'deleteNode') {
-      deleteNode(zk, nodePath, callback)
+      deleteNode(zkClient, nodePath, callback)
     }
     if (operation == 'createNode') {
-      createNode(zk, nodePath, newData, callback)
+      createNode(zkClient, nodePath, newData, callback)
     }
-  }
-  zk.on('connected', function () {
-    if (operation == 'setData') {
-      setNodeData(zk, nodePath, newData, callback)
-    }
-    if (operation == 'deleteNode') {
-      deleteNode(zk, nodePath, callback)
-    }
-    if (operation == 'createNode') {
-      createNode(zk, nodePath, newData, callback)
-    }
-  })
 }
 
 function setNodeData (zk, nodePath, newData, callback) {
@@ -206,13 +189,13 @@ function setNodeData (zk, nodePath, newData, callback) {
 }
 
 function deleteNode (zk, nodePath, callback) {
-  zk.removeRecursive(nodePath, -1, function (error) {
+  console.log(nodePath); 
+  zk.remove(nodePath, -1, function (error) {
     if (error) {
       console.log(error.stack)
       callback('2')
       return
-    }
-
+    } 
     console.log('Nodes removed.')
     callback('1')
   })
