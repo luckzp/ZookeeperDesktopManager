@@ -85,7 +85,7 @@ function getTree (zk, lableName, zkName, callback) {
   }
 }
 
-function connectZKByName (zkName, callback) {
+function connectZKByName (zkName) {
   var CONNECTION_STRING = zkName
   var zk = zkClientMap.get(zkName)
   if (zk == null) {
@@ -94,11 +94,9 @@ function connectZKByName (zkName, callback) {
     zk.connect()
     zk.on('connected', function () {
       console.log('connectZKByName connected zk:', zk)
-      // getTree(zk, CONNECTION_STRING, CONNECTION_STRING, callback)
     })
   } else {
     console.log('connectZKByName connected zk:', zk)
-    // getTree(zk, CONNECTION_STRING, CONNECTION_STRING, callback)
   }
   zkClient = zk
   return zk
@@ -111,7 +109,7 @@ function getChildren (path) {
       console.log(error.stack)
       return
     }
-    console.log('zk node get stat=%s',  stats);
+
     children.forEach((element) => {
       var childPath = path == '/' ? path + element : path + '/' + element
       const child = { label: element, path: childPath }

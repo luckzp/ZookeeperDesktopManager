@@ -1,22 +1,10 @@
-# zookeeper-cli
+# ZookeeperDesktopManager
 
-> An electron-vue project
+基于electron-vue构建的一个zookeeper可视化桌面客户端。
 
-#### Build Setup
+![微信截图_20210206162602.png](http://ww1.sinaimg.cn/large/aacc02d8gy1gndw6mxchkj20rs0i13z8.jpg)
 
-``` bash
-# install dependencies
-npm install
+## 功能
 
-# serve with hot reload at localhost:9080
-npm run dev
-
-# build electron application for production
-npm run build
-
-
-```
-
----
-
-This project was generated with [electron-vue](https://github.com/SimulatedGREG/electron-vue)@[45a3e22](https://github.com/SimulatedGREG/electron-vue/tree/45a3e224e7bb8fc71909021ccfdcfec0f461f634) using [vue-cli](https://github.com/vuejs/vue-cli). Documentation about the original structure can be found [here](https://simulatedgreg.gitbooks.io/electron-vue/content/index.html).
+1. 搜索节点功能。
+2. 基本的增删改查功能。

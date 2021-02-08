@@ -48,6 +48,11 @@
     },
     "linux": {
       "icon": "build/icons"
+    },
+    "nsis": {
+      "oneClick": false,
+      "createDesktopShortcut": "always",
+      "allowToChangeInstallationDirectory": true
     }
   },
   "dependencies": {

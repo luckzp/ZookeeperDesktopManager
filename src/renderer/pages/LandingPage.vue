@@ -1,42 +1,14 @@
 <template>
   <div class="container">
-    <div class="nav">
-      <el-button-group class="group">
-        <el-button
-          icon="el-icon-back"
-          size="medium"
-          style="border: none"
-          :disabled="breadIndex == 0 ? true : false"
-          @click="back($event)"
-        ></el-button>
-        <el-button
-          icon="el-icon-right"
-          size="medium"
-          style="border: none"
-          :disabled="breadIndex >= breadList.length - 1 ? true : false"
-          @click="go($event)"
-        ></el-button>
-        <el-button
-          icon="el-icon-refresh"
-          size="medium"
-          style="border: none"
-          @click="refresh($event)"
-        ></el-button>
-      </el-button-group>
-
-      <div class="breadcrumb">
-        <el-breadcrumb separator="/">
-          <el-breadcrumb-item
-            v-for="(item, index) in breadList"
-            :key="index"
-            :to="{ path: '/' }"
-            @click.native="getChildrenByBread(item.path, index)"
-            >{{ item.name }}</el-breadcrumb-item
-          >
-        </el-breadcrumb>
-      </div>
-    </div>
-
+    <navBar
+      :currentBreadIndex="currentBreadIndex"
+      :breadList="breadList"
+      :goStack="goStack"
+      @back="back"
+      @go="go"
+      @refresh="refresh"
+      @getChildrenByBread="getChildrenByBread"
+    ></navBar>
     <div class="wrapper">
       <div class="left-side">
         <div class="top">
@@ -67,7 +39,7 @@
             @click="search(input)"
           ></el-button>
         </el-input>
-        <div class="table-container">
+        <div class="table-container" v-contextmenu:contextmenu>
           <el-table
             :data="tableData"
             style="width: 100%"
@@ -75,7 +47,6 @@
             :show-header="false"
             @row-click="getChildren"
             @row-contextmenu="rowContextmenu"
-            v-contextmenu:contextmenu
           >
             <el-table-column prop="label" label="节点名称"> </el-table-column>
           </el-table>
@@ -95,33 +66,13 @@
           </v-contextmenu>
         </div>
       </div>
-
-      <div class="right-side">
-        <div class="info">
-          <div class="title">当前节点名：{{currZK}}</div>
-          <el-table
-            :show-header="false"
-            :data="node"
-            :row-style="{ height: '0' }"
-            :cell-style="{ padding: '0' }"
-            style="width: 98%"
-          >
-            <el-table-column prop="name" label="" width="150">
-            </el-table-column>
-            <el-table-column prop="realValue" label="" width="160">
-            </el-table-column>
-            <el-table-column prop="description" label="" > </el-table-column>
-          </el-table>
-        </div>
-        <div class="doc">
-          <div class="title">node value：</div>
-          <textarea
-            v-model="nodeData"
-            style="width: 100%; height: 80%"
-          ></textarea>
-          <el-button type="primary" @click="setData()">保存</el-button>
-        </div>
-      </div>
+      <rightSide
+        :currZK="currZK"
+        :node="node"
+        :nodeData="nodeData"
+        @setData="setData"
+      >
+      </rightSide>
 
       <el-dialog title="创建新节点" :visible.sync="dialogVisible" width="50%">
         <el-form
@@ -131,8 +82,10 @@
           class="demo-dynamic"
           size="mini"
         >
-          <p>当前zk：{{ currZK }}</p>
+        <div class="nodeInfo">
+          <p style="margin-botton:5px;">当前zk：{{ currZK }}</p>
           <p>当前path：{{ currPath }}</p>
+          </div>
           <el-form-item
             prop="nodePath"
             label="nodeName"
@@ -153,7 +106,7 @@
           </el-form-item>
           <el-form-item>
             <el-button
-              type="danger"
+              type="primary"
               @click="submitForm2('dynamicValidateForm2')"
               >提交</el-button
             >
@@ -165,45 +118,40 @@
 </template>
 
 <script>
-import SystemInformation from "./LandingPage/SystemInformation";
+import SystemInformation from "../components/SystemInformation";
 import zkApi from "../common/js/zkApi.js";
-import contextButton from "./contextButton/index";
+import { Stack } from "../common/js/stack.js";
+import navBar from "../components/navBar";
+import rightSide from "../components/rightSide";
 export default {
   name: "landing-page",
-  components: { SystemInformation },
+  components: { navBar, rightSide },
   data() {
     return {
       address: "",
       port: "",
       input: "",
+      currPath: "",
+      currZK: "",
       tableData: [],
-      tableHeight: 0,
       breadList: [],
-      breadIndex: 0,
+      currentBreadIndex: 0,
       node: [],
       nodeData: "",
-      menuVisible: false,
       dialogVisible: false,
-      currZK: "",
-      currPath: "",
       dynamicValidateForm2: {
         nodePath: "newChild",
         nodeValue: "new child value",
       },
+      goStack: new Stack(),
     };
   },
-  mounted() {
-    this.$nextTick(() => {
-      this.tableHeight = window.innerHeight - 50;
-      // 后面的50：根据需求空出的高度，自行调整
-    });
-  },
+
   methods: {
     connect(address, port) {
       var host = "127.0.0.1:2181";
-      var zookeeper = zkApi.connectZKByName(host, (ret) => {
-        console.log("this.data is " + ret.zkName);
-      });
+      zkApi.connectZKByName(host);
+      Object.assign(this.$data, this.$options.data());
       this.tableData = zkApi.getChildren("/");
       const bread = { name: "ROOT", path: "/" };
       this.breadList.push(bread);
@@ -222,12 +170,15 @@ export default {
     },
     getChildren(row) {
       this.tableData = zkApi.getChildren(row.path);
-      if (this.breadList.length > this.breadIndex + 1) {
-        this.breadList = this.breadList.splice(0, this.breadIndex + 1);
+      if (this.breadList.length > this.currentBreadIndex + 1) {
+        this.breadList = this.breadList.splice(0, this.currentBreadIndex + 1);
       }
       this.addBread(row.label, row.path);
-      this.breadIndex = this.breadList.length - 1;
-      this.currPath = row.path;
+      this.currentBreadIndex = this.breadList.length - 1;
+      this.currZK = this.breadList[this.currentBreadIndex].name;
+      if (this.goStack._length > 0) {
+        this.goStack = new Stack();
+      }
       var that = this;
       zkApi.getNodeData(row.path, (ret, val) => {
         that.node = ret;
@@ -240,13 +191,21 @@ export default {
         target = e.target.parentNode;
       }
       target.blur();
-      if (this.breadIndex == 0) {
-        return;
-      }
-      this.breadIndex = this.breadIndex - 1;
+      this.goStack.push(this.breadList[this.currentBreadIndex]);
+      this.breadList.pop();
+      this.currentBreadIndex = this.currentBreadIndex - 1;
+      this.currZK = this.breadList[this.currentBreadIndex].name;
       this.tableData = zkApi.getChildren(
-        this.breadList[this.breadIndex].path,
-        this.breadIndex
+        this.breadList[this.currentBreadIndex].path,
+        this.currentBreadIndex
+      );
+      var that = this;
+      zkApi.getNodeData(
+        this.breadList[this.currentBreadIndex].path,
+        (ret, val) => {
+          that.node = ret;
+          that.nodeData = val;
+        }
       );
     },
     go(e) {
@@ -255,14 +214,26 @@ export default {
         target = e.target.parentNode;
       }
       target.blur();
-      if (this.breadIndex >= this.breadList.length - 1) {
-        return;
+      if (
+        this.currentBreadIndex < this.breadList.length - 1 ||
+        this.goStack._length > 0
+      ) {
+        this.breadList.push(this.goStack.pop());
+        this.currentBreadIndex = this.currentBreadIndex + 1;
+        this.currZK = this.breadList[this.currentBreadIndex].name;
+        this.tableData = zkApi.getChildren(
+          this.breadList[this.currentBreadIndex].path,
+          this.currentBreadIndex
+        );
+        var that = this;
+        zkApi.getNodeData(
+          this.breadList[this.currentBreadIndex].path,
+          (ret, val) => {
+            that.node = ret;
+            that.nodeData = val;
+          }
+        );
       }
-      this.breadIndex = this.breadIndex + 1;
-      this.tableData = zkApi.getChildren(
-        this.breadList[this.breadIndex].path,
-        this.breadIndex
-      );
     },
     refresh(e) {
       var target = e.target;
@@ -271,13 +242,18 @@ export default {
       }
       target.blur();
       this.tableData = zkApi.getChildren(
-        this.breadList[this.breadIndex].path,
-        this.breadIndex
+        this.breadList[this.currentBreadIndex].path,
+        this.currentBreadIndex
       );
     },
     getChildrenByBread(path, index) {
       this.tableData = zkApi.getChildren(path);
-      this.breadIndex = index;
+      this.currZK = this.breadList[index].name;
+      var that = this;
+      zkApi.getNodeData(this.breadList[index].path, (ret, val) => {
+        that.node = ret;
+        that.nodeData = val;
+      });
     },
     search(input) {
       var newNodes = [];
@@ -293,7 +269,6 @@ export default {
       return "row";
     },
     rowContextmenu(row, column, event) {
-      this.currZK = row.label;
       this.currPath = row.path;
     },
     deleteNode() {
@@ -307,15 +282,20 @@ export default {
         }
       });
     },
-    setData() {
-      zkApi.operateZKNode("setData", this.currPath, this.nodeData, (ret) => {
-        if (ret == 1) {
-          this.$message({
-            message: "设置节点数据成功",
-            type: "success",
-          });
+    setData(nodeData) {
+      zkApi.operateZKNode(
+        "setData",
+        this.breadList[this.currentBreadIndex].path,
+        nodeData,
+        (ret) => {
+          if (ret == 1) {
+            this.$message({
+              message: "设置节点数据成功",
+              type: "success",
+            });
+          }
         }
-      });
+      );
     },
     createNode() {
       this.dialogVisible = true;
@@ -323,7 +303,9 @@ export default {
     submitForm2(formName) {
       zkApi.operateZKNode(
         "createNode",
-        this.currPath + "/" + this.dynamicValidateForm2.nodePath,
+        this.breadList[this.currentBreadIndex].path +
+          "/" +
+          this.dynamicValidateForm2.nodePath,
         this.dynamicValidateForm2.nodeValue,
         (ret) => {
           this.dialogVisible = false;
@@ -361,11 +343,6 @@ body {
   letter-spacing: 0.25px;
 }
 
-.nav {
-  margin: 10px;
-  background: white;
-  border-radius: 5px;
-}
 .wrapper {
   height: 90%;
   width: 100%;
@@ -390,30 +367,7 @@ body {
   overflow: auto;
   height: 82%;
 }
-.right-side {
-  width: 55%;
-  height: 100%;
-  background: white;
-  margin-right: 10px;
-  margin-left: 5px;
-  border-radius: 5px;
-  padding: 10px;
-}
-.group {
-  float: left;
-  margin-left: 5px;
-}
-.breadcrumb {
-  font-family: "Source Sans Pro", sans-serif;
-  height: 36px;
-  padding: 8px;
-  word-wrap: break-word;
-  word-break: break-all;
-  overflow: hidden; /*这个参数根据需要来绝对要不要*/
-}
-.breadcrumb .el-breadcrumb {
-  font-size: 16px;
-}
+
 .el-table .row {
   font-size: 16px;
 }
@@ -450,20 +404,8 @@ body {
 .submit-btn {
   float: right;
 }
-
-.info {
-  overflow: auto;
-   height: 53%;
-}
-.title {
-  color: #888;
-  font-size: 15px;
-  font-weight: initial;
-  letter-spacing: 0.25px;
-  margin-left: 5px;
+.nodeInfo {
+  margin-left: 10px;
   margin-bottom: 5px;
-}
-.doc {
-  height: 43%;
 }
 </style>
