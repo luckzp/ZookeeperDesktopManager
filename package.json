@@ -1,5 +1,5 @@
 {
-  "name": "zookeeper-cli",
+  "name": "zookeeper-desktop-manger",
   "version": "0.0.1",
   "author": "ZhangP <245527922@qq.com>",
   "description": "An electron-vue project",
@@ -17,8 +17,8 @@
     "postinstall": ""
   },
   "build": {
-    "productName": "zookeeper-cli",
-    "appId": "zookeeper-cli",
+    "productName": "zookeeper-desktop-manger",
+    "appId": "zookeeper-desktop-manger",
     "directories": {
       "output": "build"
     },

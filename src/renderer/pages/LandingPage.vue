@@ -149,7 +149,7 @@ export default {
 
   methods: {
     connect(address, port) {
-      var host = "127.0.0.1:2181";
+      var host = address + ":" + port;
       zkApi.connectZKByName(host);
       Object.assign(this.$data, this.$options.data());
       this.tableData = zkApi.getChildren("/");
