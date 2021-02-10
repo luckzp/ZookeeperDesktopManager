@@ -8,7 +8,7 @@
   import LandingPage from '@/pages/LandingPage'
 
   export default {
-    name: 'ZookeeperDesktopManger',
+    name: 'ZookeeperDesktopManager',
     components: {
       LandingPage
     }
