@@ -149,8 +149,21 @@ export default {
 
   methods: {
     connect(address, port) {
+      if(address.replace(/(^s*)|(s*$)/g, "").length ==0 || port.replace(/(^s*)|(s*$)/g, "").length ==0){
+        this.$message({
+            message: "地址和端口不能为空",
+            type: "error",
+          });
+          return;
+      }
       var host = address + ":" + port;
-      zkApi.connectZKByName(host);
+      var zk = zkApi.connectZKByName(host);
+      if(zk.state.name == 'DISCONNECTED'){
+        this.$message({
+            message: "无法连接服务器",
+            type: "error",
+          });
+      }
       Object.assign(this.$data, this.$options.data());
       this.tableData = zkApi.getChildren("/");
       const bread = { name: "ROOT", path: "/" };
@@ -256,11 +269,19 @@ export default {
       });
     },
     search(input) {
+
       var newNodes = [];
       for (var i = 0; i < this.tableData.length; i++) {
         if (this.tableData[i].label.indexOf(input) != -1) {
           newNodes.push(this.tableData[i]);
         }
+      }
+      if(this.newNodes.length == 0){
+        this.$message({
+            message: "没有查到任何数据",
+            type: "error",
+          });
+          return;
       }
       this.tableData = newNodes;
       this.input = "";

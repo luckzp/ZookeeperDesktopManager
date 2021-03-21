@@ -3,7 +3,7 @@ var zkClientMap = new Map()
 var zkClient
 var Zookeeper = require('node-zookeeper-client')
 var OPTIONS = {
-  sessionTimeout: 300000
+  sessionTimeout: 3000
 }
 
 function connectZK (callback) {
@@ -43,7 +43,6 @@ function getTree (zk, lableName, zkName, callback) {
         return
       }
       var parentChild = newChild
-      // console.log('Children are:', children);
       children.forEach(childPath => {
         parentChild = newChild
         // console.log('nweChild is: ', newChild)
@@ -94,6 +93,9 @@ function connectZKByName (zkName) {
     zk.connect()
     zk.on('connected', function () {
       console.log('connectZKByName connected zk:', zk)
+    })
+    zk.on('expired',function () {
+      console.log('expired')
     })
   } else {
     console.log('connectZKByName connected zk:', zk)
