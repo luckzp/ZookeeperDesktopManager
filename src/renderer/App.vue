@@ -9,7 +9,7 @@
   import LandingPage from '@/pages/LandingPage'
 import NodePad from '@/pages/NodePad'
   export default {
-    name: 'ZookeeperDesktopManager',
+    name: 'OneSetting',
     components: {
       LandingPage,
       NodePad

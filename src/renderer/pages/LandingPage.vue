@@ -157,13 +157,7 @@ export default {
           return;
       }
       var host = address + ":" + port;
-      var zk = zkApi.connectZKByName(host);
-      if(zk.state.name == 'DISCONNECTED'){
-        this.$message({
-            message: "无法连接服务器",
-            type: "error",
-          });
-      }
+      zkApi.connectZKByName(host);
       Object.assign(this.$data, this.$options.data());
       this.tableData = zkApi.getChildren("/");
       const bread = { name: "ROOT", path: "/" };
@@ -171,11 +165,19 @@ export default {
       this.currPath = "/";
       this.currZK = "ROOT";
       var that = this;
-
       zkApi.getNodeData("/", (ret, val) => {
         that.node = ret;
         that.nodeData = val;
       });
+      setTimeout(function(){
+        var zk = zkApi.getZK();
+        if(zk.state.name == 'DISCONNECTED'){
+                  that.$message({
+            message: "无法连接服务器",
+            type: "error",
+          });
+        }
+      }, 500)
     },
     addBread(nodeLabel, nodePath) {
       const bread = { name: nodeLabel, path: nodePath };
@@ -275,13 +277,6 @@ export default {
         if (this.tableData[i].label.indexOf(input) != -1) {
           newNodes.push(this.tableData[i]);
         }
-      }
-      if(this.newNodes.length == 0){
-        this.$message({
-            message: "没有查到任何数据",
-            type: "error",
-          });
-          return;
       }
       this.tableData = newNodes;
       this.input = "";

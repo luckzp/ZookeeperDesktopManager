@@ -3,7 +3,7 @@ var zkClientMap = new Map()
 var zkClient
 var Zookeeper = require('node-zookeeper-client')
 var OPTIONS = {
-  sessionTimeout: 3000
+  sessionTimeout: 300000
 }
 
 function connectZK (callback) {
@@ -93,9 +93,6 @@ function connectZKByName (zkName) {
     zk.connect()
     zk.on('connected', function () {
       console.log('connectZKByName connected zk:', zk)
-    })
-    zk.on('expired',function () {
-      console.log('expired')
     })
   } else {
     console.log('connectZKByName connected zk:', zk)
@@ -217,6 +214,9 @@ function createNode (zk, nodePath, nodeValue, callback) {
     }
   )
 }
+function getZK(){
+  return zkClient;
+}
 
 const hexString = (longBuffer) => (longBuffer).toString("hex");
 
@@ -305,5 +305,6 @@ export default {
   getNodeData,
   connectZKByName,
   operateZKNode,
-  getChildren
+  getChildren,
+  getZK
 }

@@ -1,16 +1,11 @@
 
 <template>
   <div>
-    <el-input
-      type="textarea"
-      :rows="2"
-      placeholder="请输入内容"
-      v-model="textarea"
-    >
-    </el-input>
-<el-input v-model="input" placeholder="请输入内容"></el-input>
-    <input type="file" @change="loadTextFromFile" />
-    <el-button type="primary" @click="save">连接</el-button>
+    <el-input v-model="input" placeholder="请输入文件路径"></el-input>
+    <el-radio v-model="radio" label="test">test</el-radio>
+    <el-radio v-model="radio" label="pre">pre</el-radio>
+    <el-button type="primary" @click="save(1)">不注册</el-button>
+    <el-button type="primary" @click="save(2)">还原</el-button>
   </div>
 </template>
 
@@ -18,46 +13,78 @@
 export default {
   name: "node-pad",
   data() {
-    return { textarea: "hello world", filePath: "", fileText: "",input:"" };
+    return {
+      textarea: "hello world",
+      input: "",
+      radio: "test",
+    };
   },
   methods: {
-    loadTextFromFile(ev) {
-      const file = ev.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = (e) => this.$emit("load", e.target.result);
-      reader.readAsText(file);
-      this.filePath = file.path;
-      var that = this;
-      reader.onload = function () {
-        that.textarea = this.result;
-        that.fileText = this.result;
-        let searchStr = "ddl-auto: update";
-        let replaceStr = "ddl-auto: insert";
-        that.textarea = that.textarea.replace(searchStr, replaceStr);
-      };
-    },
-    save() {
+    save(type) {
       let fs = require("fs");
-      var a = this.input;
-var b = JSON.stringify({a});
-console.log(b);
-var c = b.split('"');
-console.log(c);
-console.log(c[3]);
+      var arr = new Array();
+      if (this.input.replace(/(^s*)|(s*$)/g, "").length == 0) {
+        this.input = "E:\\iflytek_code\\homework-platform";
+      }
+      var coreAsync =
+        this.input +
+        "\\core-async-task\\src\\main\\resources\\application-" +
+        this.radio +
+        ".yml";
+      var coreSvc =
+        this.input +
+        "\\core-svc\\src\\main\\resources\\application-" +
+        this.radio +
+        ".yml";
+      var agentSvc =
+        this.input +
+        "\\agent-svc\\src\\main\\resources\\application-" +
+        this.radio +
+        ".yml";
+      var bizSvc =
+        this.input +
+        "\\biz-svc\\src\\main\\resources\\application-" +
+        this.radio +
+        ".yml";
+      arr.push(coreAsync);
+      arr.push(coreSvc);
+      arr.push(agentSvc);
+      arr.push(bizSvc);
+      for (var i = 0; i < arr.length; i++) {
+        var path = arr[i];
+        var data = fs.readFileSync(path);
+        var res;
+        if (type == 1) {
+          res = data.toString().replace("register: true", "register: false");
+        } else {
+          res = data.toString().replace("register: false", "register: true");
+        }
 
-      var data = fs.readFileSync("C:\\Users\\24552\\Desktop\\1.txt");
-
-      console.log("我是同步执行的结果集：" + data.toString());
-
-      let jsonObj = data+"123";
-      fs.writeFile(this.filePath, jsonObj, function (err) {
+        fs.writeFile(path, res, function (err) {
+          if (err) {
+            console.log(err);
+          }
+        });
+      }
+      var bizAppliaction =
+        this.input +
+        "\\biz-svc\\src\\main\\java\\com\\iflytek\\edu\\homework\\platform\\biz\\BizSvcApplication.java";
+      var data = fs.readFileSync(bizAppliaction);
+      if (type == 1) {
+        res = data
+          .toString()
+          .replace("epas-dubbo-beans.xml", "epas-dubbo-beans-direct.xml");
+      } else {
+        res = data
+          .toString()
+          .replace("epas-dubbo-beans-direct.xml", "epas-dubbo-beans.xml");
+      }
+      fs.writeFile(bizAppliaction, res, function (err) {
         if (err) {
           console.log(err);
-        } else {
-          console.log("file success！！！");
         }
       });
+      console.log("file end success！！！");
     },
   },
 };
