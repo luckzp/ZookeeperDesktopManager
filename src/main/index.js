@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain,dialog } from 'electron'
 
 /**
  * Set `__static` path to static files in production
@@ -13,6 +13,19 @@ const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
 
+
+  function createDownloadManager() {
+
+    ipcMain.on('open-file-dialog', function (event) {
+      dialog.showOpenDialog({
+        properties: ['openFile', 'openDirectory']
+      }, function (files) {
+        if (files) event.sender.send('selected-directory', files)
+        event.returnValue = files;
+      })
+    })
+  }
+
 function createWindow() {
   /**
    * Initial window options
@@ -20,14 +33,19 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     minHeight: 600,
     useContentSize: true,
-    minWidth: 1000
+    minWidth: 1000,
+    webPreferences: {
+      nodeIntegration: true,
+      webSecurity: false
+    }
   })
 
   mainWindow.loadURL(winURL)
-  mainWindow.setTitle("ZookeeperDesktopManager")
+  mainWindow.setTitle("Image-Download")
   mainWindow.on('closed', () => {
     mainWindow = null
   })
+  createDownloadManager()
 }
 
 app.on('ready', createWindow)

@@ -66,6 +66,52 @@ export default {
           }
         });
       }
+      var enviromentArray = new Array();
+      var coreSvcEnviroment =
+        this.input +
+        "\\core-svc\\src\\main\\resources\\application.yml";
+    
+      var bizSvcEnviroment =
+        this.input +
+        "\\biz-svc\\src\\main\\resources\\application.yml";
+      enviromentArray.push(coreSvcEnviroment);
+      enviromentArray.push(bizSvcEnviroment);
+      for (var j = 0; j < enviromentArray.length; j++) {
+        var path = enviromentArray[j];
+        var data = fs.readFileSync(path);
+        var res;
+        if (type == 1) {
+          res = data.toString().replace("active: local-dev", "active: " + this.radio);
+        } else {
+          res = data.toString().replace("active: " + this.radio, "active: local-dev");
+        }
+
+        fs.writeFile(path, res, function (err) {
+          if (err) {
+            console.log(err);
+          }
+        });
+      }
+      var agentSvcEnviroment =
+        this.input +
+        "\\agent-svc\\src\\main\\resources\\application.yml";
+      var data = fs.readFileSync(agentSvcEnviroment);
+      if (type == 1) {
+        res = data
+          .toString()
+          .replace("name: agent-svc", "name: agent-svc\n  profiles:\n    active: "+ this.radio);
+      } else {
+        res = data
+          .toString()
+          .replace("name: agent-svc\n", "name: agent-svc")
+          .replace("profiles:\n", "").replace("active: "+ this.radio, "");
+        res = res.replace("name: agent-svc      ","name: agent-svc");
+      }
+      fs.writeFile(agentSvcEnviroment, res, function (err) {
+        if (err) {
+          console.log(err);
+        }
+      });
       var bizAppliaction =
         this.input +
         "\\biz-svc\\src\\main\\java\\com\\iflytek\\edu\\homework\\platform\\biz\\BizSvcApplication.java";
